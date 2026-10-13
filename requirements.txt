@@ -1,0 +1,29 @@
+# Meme'd Payout Tracker - dependency reference
+# Node projects don't use requirements.txt; the source of truth is
+# backend/package.json (and frontend/package.json after create-next-app).
+# To install EVERYTHING in one go:
+#     cd backend && npm install
+#
+# ---- backend runtime ----
+express          # web framework
+mongoose         # MongoDB ODM
+jsonwebtoken     # JWT sign/verify
+bcryptjs         # password hashing
+zod              # request validation
+cors             # CORS middleware
+dotenv           # env vars
+helmet           # security headers
+morgan           # request logging
+express-rate-limit  # rate limiting
+ioredis          # Redis client (bonus: campaign list cache)
+
+# ---- backend dev ----
+typescript (5.9.x, NOT 7: ts-jest peer conflict)
+ts-node-dev
+jest
+ts-jest
+supertest
+@types/node @types/express @types/cors @types/jsonwebtoken @types/morgan @types/jest @types/supertest
+
+# ---- frontend (installed by create-next-app) ----
+next react react-dom typescript eslint
