@@ -2,15 +2,13 @@ import type { ErrorRequestHandler, RequestHandler } from "express";
 import mongoose from "mongoose";
 import { ZodError } from "zod";
 import { AppError } from "../utils/AppError";
+import { isDuplicateKeyError } from "../utils/mongoErrors";
 
 interface ErrorBody {
   code: string;
   message: string;
   details?: unknown;
 }
-
-const hasCode = (err: unknown, code: number): boolean =>
-  typeof err === "object" && err !== null && (err as { code?: unknown }).code === code;
 
 const isBodyParseError = (err: unknown): boolean =>
   typeof err === "object" && err !== null && (err as { type?: unknown }).type === "entity.parse.failed";
@@ -30,7 +28,7 @@ function toErrorBody(err: unknown): { status: number; body: ErrorBody } {
   if (err instanceof mongoose.Error.CastError) {
     return { status: 400, body: { code: "INVALID_ID", message: `Invalid value for ${err.path}` } };
   }
-  if (hasCode(err, 11000)) {
+  if (isDuplicateKeyError(err)) {
     return { status: 409, body: { code: "DUPLICATE", message: "A record with these details already exists" } };
   }
   if (isBodyParseError(err)) {
