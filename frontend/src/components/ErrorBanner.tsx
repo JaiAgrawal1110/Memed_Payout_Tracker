@@ -1,18 +1,18 @@
 import { describeError } from "@/lib/api";
+import { Notice } from "./Notice";
 
 export function ErrorBanner({ error }: { error: unknown }) {
   if (!error) return null;
   const { message, details } = describeError(error);
   return (
-    <div className="banner banner-error" role="alert">
-      <strong>{message}</strong>
+    <Notice status="error" title={message}>
       {details.length > 0 && (
-        <ul>
+        <ul className="list-disc pl-4">
           {details.map((d, i) => (
             <li key={i}>{d.message}</li>
           ))}
         </ul>
       )}
-    </div>
+    </Notice>
   );
 }

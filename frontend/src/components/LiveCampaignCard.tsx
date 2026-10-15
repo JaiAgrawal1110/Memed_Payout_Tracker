@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Button } from "@/components/tailgrids/core/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/tailgrids/core/card";
+import { Input } from "@/components/tailgrids/core/input";
 import { api } from "@/lib/api";
 import type { LiveCampaign } from "@/lib/types";
 import { BudgetBar } from "./BudgetBar";
 import { ErrorBanner } from "./ErrorBanner";
 import { LadderList } from "./LadderList";
+import { Notice } from "./Notice";
+import { PlatformBadge } from "./PlatformBadge";
 
 export function LiveCampaignCard({ campaign, onSubmitted }: { campaign: LiveCampaign; onSubmitted: () => void }) {
   const [postLink, setPostLink] = useState("");
@@ -31,30 +36,36 @@ export function LiveCampaignCard({ campaign, onSubmitted }: { campaign: LiveCamp
   }
 
   return (
-    <article className="card">
-      <div className="card-head">
-        <h3>{campaign.name}</h3>
-        <span className="chip">{campaign.platform}</span>
-      </div>
-      <p className="muted small">by {campaign.brand.name}</p>
-      <BudgetBar spent={campaign.budgetSpent} total={campaign.totalBudget} />
-      <LadderList ladder={campaign.ladder} />
+    <Card className="card rise md:min-w-0 gap-4 pb-5">
+      <CardHeader className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <CardTitle className="truncate text-xl font-bold text-neutral-900">{campaign.name}</CardTitle>
+          <p className="mt-1 text-xs text-neutral-600">by {campaign.brand.name}</p>
+        </div>
+        <PlatformBadge platform={campaign.platform} />
+      </CardHeader>
 
-      <form className="inline-form" onSubmit={handleSubmit}>
-        <input
-          type="url"
-          value={postLink}
-          onChange={(e) => setPostLink(e.target.value)}
-          placeholder={`Paste your ${campaign.platform} post link`}
-          aria-label={`Post link for ${campaign.name}`}
-          required
-        />
-        <button className="btn" type="submit" disabled={submitting}>
-          {submitting ? "Submitting…" : "Submit post"}
-        </button>
-      </form>
-      <ErrorBanner error={error} />
-      {done && <p className="banner banner-ok">Post submitted. Update its views below to see earnings.</p>}
-    </article>
+      <CardContent className="flex flex-col gap-4">
+        <BudgetBar spent={campaign.budgetSpent} total={campaign.totalBudget} />
+        <LadderList ladder={campaign.ladder} />
+
+        <form className="flex gap-2" onSubmit={handleSubmit}>
+          <Input
+            type="url"
+            value={postLink}
+            onChange={(e) => setPostLink(e.target.value)}
+            placeholder={`Paste your ${campaign.platform} post link`}
+            aria-label={`Post link for ${campaign.name}`}
+            required
+            className="w-full min-w-0"
+          />
+          <Button type="submit" pending={submitting} className="shrink-0">
+            {submitting ? "Submitting…" : "Submit"}
+          </Button>
+        </form>
+        <ErrorBanner error={error} />
+        {done && <Notice status="success" title="Post submitted" />}
+      </CardContent>
+    </Card>
   );
 }
