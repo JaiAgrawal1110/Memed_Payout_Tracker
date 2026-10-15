@@ -20,6 +20,9 @@ if (env.NODE_ENV !== "test") app.use(morgan("dev"));
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", db: mongoose.connection.readyState === 1 ? "connected" : "disconnected" });
 });
+app.get("/", (_req, res) => {
+  res.json({ name: "Meme'd Payout Tracker API", status: "ok", health: "/health", api: "/api" });
+});
 
 app.use("/api", apiRouter);
 
