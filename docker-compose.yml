@@ -4,6 +4,9 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  redis:
+    image: redis:7-alpine
+
   backend:
     build: ./backend
     ports:
@@ -12,11 +15,13 @@ services:
       NODE_ENV: production
       PORT: 4000
       MONGO_URI: mongodb://mongo:27017/memed
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: change-me-to-a-long-random-string
       JWT_EXPIRES_IN: 7d
       CORS_ORIGIN: http://localhost:3001
     depends_on:
       - mongo
+      - redis
 
   frontend:
     build:

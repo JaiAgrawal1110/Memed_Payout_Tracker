@@ -1,4 +1,5 @@
 import type { HydratedDocument, Types } from "mongoose";
+import { cacheDel, cacheGet, cacheSet, LIVE_CAMPAIGNS_KEY } from "../config/redis";
 import { Campaign, type ICampaign } from "../models/Campaign";
 import { Submission } from "../models/Submission";
 import { User } from "../models/User";
@@ -34,6 +35,9 @@ export const LIVE_CAMPAIGN_FILTER = { $expr: { $lt: ["$budgetSpent", "$totalBudg
 /** Upper bound on list responses (no pagination yet; see the scaling note). */
 const MAX_LIST = 100;
 
+/** Short TTL: a safety net in case an invalidation is missed (e.g. a reservation that is later released). */
+const LIVE_CACHE_TTL_SECONDS = 30;
+
 export function toCampaignDto(c: HydratedDocument<ICampaign>): CampaignDto {
   return {
     id: String(c._id),
@@ -50,6 +54,7 @@ export function toCampaignDto(c: HydratedDocument<ICampaign>): CampaignDto {
 
 export async function createCampaign(brandId: string, input: CreateCampaignInput): Promise<CampaignDto> {
   const campaign = await Campaign.create({ brand: brandId, ...input });
+  await cacheDel(LIVE_CAMPAIGNS_KEY); // a new live campaign must show up immediately
   return toCampaignDto(campaign);
 }
 
@@ -66,16 +71,25 @@ export async function listBrandCampaigns(brandId: string): Promise<BrandCampaign
   return campaigns.map((c) => ({ ...toCampaignDto(c), submissionCount: countById.get(String(c._id)) ?? 0 }));
 }
 
-/** Campaigns creators can submit to: only those with budget left, newest first. */
+/**
+ * Campaigns creators can submit to: only those with budget left, newest first.
+ * Cached in Redis (shared by all creators). Falls back to Mongo if Redis is unset or down.
+ */
 export async function listLiveCampaigns(): Promise<LiveCampaignDto[]> {
+  const cached = await cacheGet<LiveCampaignDto[]>(LIVE_CAMPAIGNS_KEY);
+  if (cached) return cached;
+
   const campaigns = await Campaign.find(LIVE_CAMPAIGN_FILTER).sort({ createdAt: -1 }).limit(MAX_LIST);
 
   const brandIds = [...new Set(campaigns.map((c) => String(c.brand)))];
   const brands = await User.find({ _id: { $in: brandIds } }).select("name");
   const brandName = new Map(brands.map((b) => [String(b._id), b.name]));
 
-  return campaigns.map((c) => ({
+  const result = campaigns.map((c) => ({
     ...toCampaignDto(c),
     brand: { id: String(c.brand), name: brandName.get(String(c.brand)) ?? "Unknown brand" },
   }));
+
+  await cacheSet(LIVE_CAMPAIGNS_KEY, result, LIVE_CACHE_TTL_SECONDS);
+  return result;
 }

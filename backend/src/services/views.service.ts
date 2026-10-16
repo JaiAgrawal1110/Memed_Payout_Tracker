@@ -21,8 +21,12 @@
  * the reservation is deliberately NOT released (we cannot know whether the credit landed). The campaign then
  * shows slightly less remaining budget than reality: it can under-spend but never overspend. It is reconcilable
  * by comparing budgetSpent with the sum of amountPaid.
+ *
+ * Cache: whenever budget moves, the shared live-campaigns cache is invalidated so creators never see a stale
+ * "remaining" amount or an exhausted campaign still listed as live (the cache TTL is only a safety net).
  */
 import type { Types } from "mongoose";
+import { cacheDel, LIVE_CAMPAIGNS_KEY } from "../config/redis";
 import { Campaign } from "../models/Campaign";
 import { Submission } from "../models/Submission";
 import type { MilestoneStep } from "../types";
@@ -133,10 +137,12 @@ export async function updateSubmissionViews(submissionId: string, views: number)
     );
     if (!credited) {
       await releaseReservation(campaign._id, calc.payout);
+      await cacheDel(LIVE_CAMPAIGNS_KEY); // budget moved (reserved, then released)
       if (attempt < MAX_ATTEMPTS) await sleep(backoffMs(attempt));
       continue;
     }
 
+    await cacheDel(LIVE_CAMPAIGNS_KEY); // budget spent changed: drop the cached live list
     return buildResult(credited, reserved, calc);
   }
 
