@@ -8,6 +8,16 @@ Creator marketplace app: brands create campaigns with a budget and a milestone l
 
 > The backend is on Render's free tier, so the first request after idle can take ~50 seconds (cold start). Open the `/health` link once to wake it before testing.
 
+## Submission Checklist
+| Requirement | Where |
+|---|---|
+| Public GitHub repo, monorepo with `/backend` and `/frontend` | [Project Structure](#project-structure) |
+| README with setup steps | [Setup (local)](#setup-local-without-docker) and [Run with Docker](#run-with-docker) |
+| Environment variable info | [Environment Variables](#environment-variables) |
+| Assumptions made | [Assumptions (open cases)](#assumptions-open-cases) |
+| Sample `.env.example` | [`backend/.env.example`](backend/.env.example) and [`frontend/.env.example`](frontend/.env.example) |
+| Deployed live link | [Live Links](#live-links) |
+
 ## Screenshots
 
 ### Login
@@ -83,6 +93,23 @@ Copy `.env.example` to `.env` (backend) or `.env.local` (frontend).
 | NEXT_PUBLIC_API_URL | frontend | No | Backend base URL **including `/api`** (default `http://localhost:4000/api`) |
 
 The backend validates env vars with Zod at startup and exits with a clear message if a required one is missing.
+
+### Sample `.env.example`
+`backend/.env.example`
+```env
+NODE_ENV=development
+PORT=4000
+MONGO_URI=mongodb://localhost:27017/memed
+JWT_SECRET=replace-with-a-long-random-string
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:3000
+# REDIS_URL=redis://localhost:6379   # optional
+```
+
+`frontend/.env.example`
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+```
 
 ## How Payouts Work
 `calculatePayout(views, ladder, alreadyPaid, remainingBudget) -> { payout, newTotalPaid }`
